@@ -5,6 +5,9 @@ on:
     - cron: '17 3 */2 * *'  # 每2天运行一次（UTC时间 03:17）
   workflow_dispatch:  # 允许手动触发
 
+permissions:
+  contents: write
+
 jobs:
   auto_renew_katabump:
     runs-on: ubuntu-22.04
@@ -52,3 +55,14 @@ jobs:
           HEADLESS: 'false'
         run: |
           python renew_katabump.py
+
+      - name: Heartbeat commit
+        if: always()
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git pull origin main || true
+          echo "Last run: $(date -u)" > heartbeat.txt
+          git add heartbeat.txt
+          git commit -m "heartbeat $(date -u)" || echo "No changes"
+          git push origin HEAD:main    
